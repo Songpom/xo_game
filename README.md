@@ -1,2 +1,2 @@
-# xo_gmae
+# xo_game
 
