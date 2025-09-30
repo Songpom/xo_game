@@ -1,25 +1,24 @@
-import React, { useEffect, useState } from "react";
+// src/screens/Home.js
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { listHistory } from "../services/historyService";
 import { defaultKForN } from "./rules";
+import "../home.css";
 
 export default function Home() {
   const navigate = useNavigate();
+
+  // form state
   const [mode, setMode] = useState("PVP"); // PVP | PVBOT
-  const [size, setSize] = useState(3);     // N
+  const [size, setSize] = useState(3);     // 3..19
+  const kToWin = useMemo(() => defaultKForN(size), [size]);
 
-  const onSizeChange = (e) => setSize(Number(e.target.value || 3));
-
-  const startGame = () => {
-    const k = defaultKForN(size);
-    const first = Math.random() < 0.5 ? "X" : "O";
-    navigate("/play", { state: { mode, size, k, first } });
-  };
-
+  // history state
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
+  // load history
   const loadHistory = async () => {
     try {
       setLoading(true);
@@ -34,109 +33,204 @@ export default function Home() {
   };
   useEffect(() => { loadHistory(); }, []);
 
+  // start game
+  const startGame = () => {
+    const first = Math.random() < 0.5 ? "X" : "O";
+    navigate("/play", { state: { mode, size, k: kToWin, first } });
+  };
+
+  // small helpers
+  const onSizeChange = (e) => {
+    const n = Number(e.target.value || 3);
+    const clamped = Math.max(3, Math.min(19, n));
+    setSize(clamped);
+  };
+
+  // tiny components
   const MiniBoard = ({ board, sizeBoard }) => {
     const N = Math.max(3, Number(sizeBoard) || 3);
-    const parts = (board || "").split(",").map(s => s.trim().toUpperCase());
-    while (parts.length < N*N) parts.push("");
-    const gridStyle = {
-      display: "grid",
-      gridTemplateColumns: `repeat(${N}, 18px)`,
-      gridTemplateRows: `repeat(${N}, 18px)`,
-      gap: 2,
-    };
-    const cellStyle = {
-      width: 18, height: 18, border: "1px solid #ddd",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 12, fontWeight: 700, userSelect: "none",
-    };
+    const cells = (board || "").split(",").map((s) => s.trim().toUpperCase());
+    while (cells.length < N * N) cells.push("");
     return (
-      <div style={gridStyle}>
-        {parts.slice(0, N*N).map((v, i) => (
-          <div key={i} style={cellStyle}>
-            <span style={{ color: v === "X" ? "#1976d2" : v === "O" ? "#d32f2f" : "#9e9e9e" }}>
-              {v || ""}
-            </span>
+      <div
+        className="mini-board"
+        style={{
+          gridTemplateColumns: `repeat(${N}, 18px)`,
+          gridTemplateRows: `repeat(${N}, 18px)`,
+        }}
+        aria-label={`Board ${N} by ${N}`}
+      >
+        {cells.slice(0, N * N).map((v, i) => (
+          <div key={i} className="mini-cell">
+            <span className={`mini-mark ${v === "X" ? "x" : v === "O" ? "o" : ""}`}>{v || ""}</span>
           </div>
         ))}
       </div>
     );
   };
 
-  const card = { padding: 16, border: "1px solid #eee", borderRadius: 10, background: "#fff" };
+  const PreviewBoard = ({ N }) => (
+    <div
+      className="preview-board"
+      style={{
+        gridTemplateColumns: `repeat(${N}, 28px)`,
+        gridTemplateRows: `repeat(${N}, 28px)`,
+      }}
+      aria-label={`Preview board ${N} by ${N}`}
+    >
+      {Array.from({ length: N * N }).map((_, i) => <div key={i} className="preview-cell" />)}
+    </div>
+  );
 
   return (
-    <div style={{ maxWidth: 900, margin: "32px auto", padding: "0 16px" }}>
-      <h1>XO Game</h1>
-
-      {/* ตั้งค่าเกมใหม่ */}
-      <div style={{ display: "grid", gap: 16, gridTemplateColumns: "1fr 1fr", alignItems: "start" }}>
-        <div style={card}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>โหมดการเล่น</div>
-          <label style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <input type="radio" name="mode" checked={mode === "PVP"} onChange={() => setMode("PVP")} />
-            PVP (คน vs คน)
-          </label>
-          <label style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 6 }}>
-            <input type="radio" name="mode" checked={mode === "PVBOT"} onChange={() => setMode("PVBOT")} />
-            PVBOT (คน vs บอท)
-          </label>
+    <div className="page light">
+      {/* Header */}
+      <header className="app-header">
+        <div className="brand">
+          <h1 className="brand-title">XO Game</h1>
+          <p className="brand-subtitle">ตั้งค่าเกม ทดลองขนาดกระดาน และดูประวัติย้อนหลัง</p>
         </div>
+        <div className="header-actions">
+          <button className="btn btn-ghost" onClick={loadHistory} aria-label="Refresh history">รีเฟรช</button>
+          <button className="btn btn-primary" onClick={startGame} aria-label="Start game">เริ่มเกม</button>
+        </div>
+      </header>
 
-        <div style={card}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>ขนาดกระดาน (N×N)</div>
-          <input type="number" min={3} max={19} value={size} onChange={onSizeChange} style={{ width: 120 }} />
-          <div style={{ color: "#666", marginTop: 6 }}>
-            กติกาอัตโนมัติ: {size}×{size} ⇒ เรียงชนะ {defaultKForN(size)}
+      {/* Config Section */}
+      <section className="section">
+        <div className="config-grid">
+          {/* Mode Card */}
+          <div className="card">
+            <div className="card-head">
+              <h3>โหมดการเล่น</h3>
+              <p className="muted">เลือกว่าจะเล่นกับคน หรือกับบอท</p>
+            </div>
+            <div className="radio-grid">
+              <label className={`radio-tile ${mode === "PVP" ? "active" : ""}`}>
+                <input
+                  type="radio"
+                  name="mode"
+                  checked={mode === "PVP"}
+                  onChange={() => setMode("PVP")}
+                />
+                <div className="radio-body">
+                  <div className="radio-title">🧑‍🤝‍🧑 PVP</div>
+                  <div className="radio-desc">คน vs คน</div>
+                </div>
+              </label>
+
+              <label className={`radio-tile ${mode === "PVBOT" ? "active" : ""}`}>
+                <input
+                  type="radio"
+                  name="mode"
+                  checked={mode === "PVBOT"}
+                  onChange={() => setMode("PVBOT")}
+                />
+                <div className="radio-body">
+                  <div className="radio-title">🤖 PVBOT</div>
+                  <div className="radio-desc">คน vs บอท</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* Size + Preview Card */}
+          <div className="card">
+            <div className="card-head">
+              <h3>ขนาดกระดาน</h3>
+              <p className="muted">ระบุ N (3–19) แล้วดูตัวอย่างทันที</p>
+            </div>
+
+            <div className="field-row">
+              <div className="field">
+                <label htmlFor="boardSize">N × N</label>
+                <input
+                  id="boardSize"
+                  className="input"
+                  type="number"
+                  min={3}
+                  max={19}
+                  value={size}
+                  onChange={onSizeChange}
+                />
+                <div className="hint">กติกาอัตโนมัติ: {size}×{size} ⇒ ชนะเมื่อเรียง {kToWin}</div>
+              </div>
+
+              <div className="preview-wrap">
+                <PreviewBoard N={size} />
+                <div className="preview-caption">ตัวอย่างกระดาน {size}×{size}</div>
+              </div>
+            </div>
+
+            <div className="action-row">
+              <button className="btn btn-primary" onClick={startGame}>เริ่มเกม</button>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div style={{ marginTop: 16 }}>
-        <button onClick={startGame} style={{ padding: "10px 16px", fontWeight: 600 }}>
-          เริ่มเกม
-        </button>
-      </div>
+      {/* History Section */}
+      <section className="section">
+        <div className="card">
+          <div className="table-head">
+            <h2>ประวัติการเล่น</h2>
+            <div className="toolbar">
+              <button className="btn btn-ghost" onClick={loadHistory}>Refresh</button>
+            </div>
+          </div>
 
-      {/* ประวัติการเล่น */}
-      <div style={{ marginTop: 28, ...card }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h2 style={{ margin: 0 }}>ประวัติการเล่น</h2>
-          <button onClick={loadHistory}>Refresh</button>
+          {loading && <div className="status muted">กำลังโหลด…</div>}
+          {err && <div className="status error">{err}</div>}
+
+          {!loading && !err && (
+            <div className="table-wrap" role="region" aria-label="History table" tabIndex={0}>
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Winner</th>
+                    <th>Mode</th>
+                    <th>Size</th>
+                    <th>Final Board</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((h) => (
+                    <tr key={h.id}>
+                      <td>#{h.id}</td>
+                      <td>
+                        <span className={`badge ${h.winner === "X" ? "badge-x" : h.winner === "O" ? "badge-o" : ""}`}>
+                          {h.winner || "-"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`chip ${h.mode === "PVBOT" ? "chip-bot" : "chip-pvp"}`}>{h.mode}</span>
+                      </td>
+                      <td>{h.sizeBoard}</td>
+                      <td><MiniBoard board={h.finalBoard} sizeBoard={h.sizeBoard} /></td>
+                      <td>
+                        <button
+                          className="btn btn-ghost"
+                          onClick={() => navigate(`/replay/${h.id}`)}
+                          aria-label={`Replay #${h.id}`}
+                        >
+                          ▶ Replay
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {items.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="empty">ยังไม่มีประวัติ</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-
-        {loading && <div style={{ marginTop: 12 }}>Loading...</div>}
-        {err && <div style={{ marginTop: 12, color: "crimson" }}>{err}</div>}
-
-        {!loading && !err && (
-          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 12 }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>ID</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Winner</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Mode</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Size</th>
-                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Final Board</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((h) => (
-                <tr key={h.historyId}>
-                  <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{h.historyId}</td>
-                  <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{h.winner}</td>
-                  <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{h.gameMode}</td>
-                  <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{h.sizeBoard}</td>
-                  <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>
-                    <MiniBoard board={h.board} sizeBoard={h.sizeBoard} />
-                  </td>
-                </tr>
-              ))}
-              {items.length === 0 && (
-                <tr><td colSpan={5} style={{ padding: 12, color: "#777" }}>ยังไม่มีประวัติ</td></tr>
-              )}
-            </tbody>
-          </table>
-        )}
-      </div>
+      </section>
     </div>
   );
 }

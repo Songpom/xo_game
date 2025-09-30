@@ -1,25 +1,21 @@
+// src/screens/Board.js
 import React from "react";
 
-/* =============================
-   1) Utils: serialize / helper
-   ============================= */
-// แปลง cells (array N*N) → string
+/* บันทึกลง DB: Array → String */
 export function cellsToString(cells, N) {
   const safe = Array.isArray(cells) ? cells.slice(0, N * N) : [];
   while (safe.length < N * N) safe.push("");
   return safe.join(","); // เช่น "X,O,,O,X,,,,"
 }
 
-// แปลง string → array N*N
+/* ดึงจาก DB: String → Array */
 export function stringToCells(str, N) {
   const arr = (str || "").split(",").map((s) => s.trim().toUpperCase());
   while (arr.length < N * N) arr.push("");
-  return arr;
+  return arr.slice(0, N * N);
 }
 
-/* =============================
-   2) UI: Interactive Board
-   ============================= */
+/* กระดานคลิกได้ */
 export default function BoardInteractive({
   size = 3,
   cells = [],
@@ -49,7 +45,7 @@ export default function BoardInteractive({
   };
 
   return (
-    <div style={gridStyle}>
+    <div style={gridStyle} aria-label={`Board ${size} by ${size}`}>
       {cells.map((v, i) => (
         <div key={i} style={cellStyle} onClick={() => onCellClick(i)}>
           <span style={{ color: v === "X" ? "#1976d2" : v === "O" ? "#d32f2f" : "#999" }}>
