@@ -9,8 +9,6 @@ export default function Home() {
 
   const [mode, setMode] = useState("PVP");
   const [sizeInput, setSizeInput] = useState("3");
-
-  // คำนวณ N แบบ real-time จาก input (และ clamp 3–19)
   const previewN = useMemo(() => {
     const n = parseInt(sizeInput, 10);
     if (isNaN(n)) return 3;
@@ -37,7 +35,6 @@ export default function Home() {
   };
   useEffect(() => { loadHistory(); }, []);
 
-  // พิมพ์ได้สูงสุด 2 หลัก และให้ preview อัปเดตทันที
   const onSizeChange = (e) => {
     const v = e.target.value;
     if (v === "" || /^\d{0,2}$/.test(v)) {
@@ -45,13 +42,12 @@ export default function Home() {
     }
   };
 
-  // ถ้า blur ว่างอยู่ ให้เด้งกลับมาเป็นค่าที่ clamp แล้ว
+
   const onSizeBlur = () => {
-    const n = previewN; // clamp แล้วแน่ๆ
+    const n = previewN; 
     setSizeInput(String(n));
   };
 
-  // ปุ่ม − / +
   const stepSize = (delta) => {
     let n = previewN + delta;
     n = Math.max(3, Math.min(19, n));
@@ -59,7 +55,7 @@ export default function Home() {
   };
 
   const startGame = () => {
-    const n = previewN; // ใช้ค่าล่าสุดทันที
+    const n = previewN;
     const first = Math.random() < 0.5 ? "X" : "O";
     navigate("/play", { state: { mode, size: n, k: defaultKForN(n), first } });
   };

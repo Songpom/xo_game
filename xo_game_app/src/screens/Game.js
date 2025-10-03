@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { checkWinner, makeEmptyBoard } from "../component/gamelogic";
+import { checkWinner, makeEmptyBoard, findWinningLine } from "../component/gamelogic";
 import { defaultKForN } from "../component/rules";
-import { getBestMove } from "../component/Ai"; 
+import { getBestMove } from "../component/Ai";
 import BoardInteractive, { cellsToString } from "../component/Board";
 import {
   startHistory,
@@ -20,24 +20,23 @@ export default function Game() {
   const K     = state?.k     ?? defaultKForN(N);
   const first = state?.first ?? "X";
 
-  const [botType, setBotType] = useState(mode === "PVBOT" ? "RANDOM" : null); 
+  const [botType, setBotType] = useState(mode === "PVBOT" ? "RANDOM" : null);
 
   useEffect(() => { if (!state) navigate("/home"); }, [state, navigate]);
 
   const [cells, setCells]   = useState(() => makeEmptyBoard(N));
-  const [turn, setTurn]     = useState(first);     
-  const [winner, setWinner] = useState(null);           
-  const [saved, setSaved]   = useState(false);             
+  const [turn, setTurn]     = useState(first);
+  const [winner, setWinner] = useState(null);
+  const [saved, setSaved]   = useState(false);
+  const [winLine, setWinLine] = useState(null);   
 
   const isPvBot = mode === "PVBOT";
 
-
-  const historyIdRef   = useRef(null); 
-  const startedRef     = useRef(false); 
-  const turnCounterRef = useRef(0);     
-  const finishedRef    = useRef(false);  
-  const deletingRef    = useRef(false);  
-
+  const historyIdRef   = useRef(null);
+  const startedRef     = useRef(false);
+  const turnCounterRef = useRef(0);
+  const finishedRef    = useRef(false);
+  const deletingRef    = useRef(false);
 
   async function ensureHistoryStarted() {
     if (startedRef.current) return;
@@ -51,9 +50,28 @@ export default function Game() {
     startedRef.current = true;
   }
 
+  const endGameIfWin = async (board) => {
+    const boardAfter = cellsToString(board, N);
+    const maybeWinner = checkWinner(board, N, K);
+    if (maybeWinner && !finishedRef.current) {
+      finishedRef.current = true;
+      setWinner(maybeWinner);
+      const line = findWinningLine(board, N, K);
+      setWinLine(line || null);
+      await finishHistory(historyIdRef.current, {
+        winner: maybeWinner,
+        finalBoard: boardAfter,
+      });
+      setSaved(true);
+      return true;
+    }
+    return false;
+  };
+
   const onCellClick = async (index) => {
     if (winner || cells[index]) return;
     if (isPvBot && turn === "O") return;
+
     const nextBoard = [...cells];
     nextBoard[index] = turn;
     setCells(nextBoard);
@@ -63,7 +81,6 @@ export default function Game() {
       await ensureHistoryStarted();
       turnCounterRef.current += 1;
       const boardAfter = cellsToString(nextBoard, N);
-
       await appendMove(historyIdRef.current, {
         turnNumber: turnCounterRef.current,
         player: turn,
@@ -71,23 +88,16 @@ export default function Game() {
         colIdx: index % N,
         boardAfter,
       });
-      const maybeWinner = checkWinner(nextBoard, N, K);
-      if (maybeWinner && !finishedRef.current) {
-        finishedRef.current = true;
-        await finishHistory(historyIdRef.current, {
-          winner: maybeWinner,
-          finalBoard: boardAfter,
-        });
-        setWinner(maybeWinner);
-        setSaved(true);
-      }
+
+      const ended = await endGameIfWin(nextBoard);
+      if (ended) return;
     } catch (e) {
       console.error("appendMove (human) failed:", e);
     }
   };
 
   useEffect(() => {
-    if (botType !== "RANDOM") return;   
+    if (botType !== "RANDOM") return;
     if (!isPvBot || winner || turn !== "O") return;
 
     const empties = cells.map((v, i) => (v ? null : i)).filter((x) => x !== null);
@@ -113,16 +123,9 @@ export default function Game() {
           colIdx: pick % N,
           boardAfter,
         });
-        const maybeWinner = checkWinner(nextBoard, N, K);
-        if (maybeWinner && !finishedRef.current) {
-          finishedRef.current = true;
-          await finishHistory(historyIdRef.current, {
-            winner: maybeWinner,
-            finalBoard: boardAfter,
-          });
-          setWinner(maybeWinner);
-          setSaved(true);
-        }
+
+        const ended = await endGameIfWin(nextBoard);
+        if (ended) return;
       } catch (e) {
         console.error("appendMove (bot RANDOM) failed:", e);
       }
@@ -131,8 +134,9 @@ export default function Game() {
     return () => clearTimeout(t);
   }, [botType, isPvBot, winner, turn, cells, N, K]);
 
+
   useEffect(() => {
-    if (botType !== "AI") return;    
+    if (botType !== "AI") return;
     if (mode !== "PVBOT" || winner || turn !== "O") return;
 
     const moveIndex = getBestMove(cells, N, K, "O", "X");
@@ -156,16 +160,8 @@ export default function Game() {
           boardAfter,
         });
 
-        const maybeWinner = checkWinner(nextBoard, N, K);
-        if (maybeWinner && !finishedRef.current) {
-          finishedRef.current = true;
-          await finishHistory(historyIdRef.current, {
-            winner: maybeWinner,
-            finalBoard: boardAfter,
-          });
-          setWinner(maybeWinner);
-          setSaved(true);
-        }
+        const ended = await endGameIfWin(nextBoard);
+        if (ended) return;
       } catch (e) {
         console.error("appendMove (bot AI) failed:", e);
       }
@@ -174,41 +170,41 @@ export default function Game() {
     return () => clearTimeout(t);
   }, [botType, mode, winner, turn, cells, N, K]);
 
-const reset = async () => {
-  if (historyIdRef.current && !deletingRef.current) {
-    try {
-      deletingRef.current = true;
-      await deleteHistory(historyIdRef.current);
-    } catch (e) {
-      console.warn("deleteHistory on reset failed:", e);
-    } finally {
-      deletingRef.current = false;
+  const reset = async () => {
+    if (historyIdRef.current && !deletingRef.current) {
+      try {
+        deletingRef.current = true;
+        await deleteHistory(historyIdRef.current);
+      } catch (e) {
+        console.warn("deleteHistory on reset failed:", e);
+      } finally {
+        deletingRef.current = false;
+      }
     }
-  }
-  historyIdRef.current = null;
-  startedRef.current = false;
-  finishedRef.current = false;
-  turnCounterRef.current = 0;
-  setCells(makeEmptyBoard(N));
-  setTurn(Math.random() < 0.5 ? "X" : "O");
-  setWinner(null);
-  setSaved(false);
-};
+    historyIdRef.current = null;
+    startedRef.current = false;
+    finishedRef.current = false;
+    turnCounterRef.current = 0;
+    setCells(makeEmptyBoard(N));
+    setTurn(Math.random() < 0.5 ? "X" : "O");
+    setWinner(null);
+    setSaved(false);
+    setWinLine(null);
+  };
 
-
-const handleBackToHome = async () => {
-  if (!winner && historyIdRef.current && !deletingRef.current) {
-    try {
-      deletingRef.current = true;
-      await deleteHistory(historyIdRef.current);
-    } catch (e) {
-      console.warn("deleteHistory on back failed:", e);
-    } finally {
-      deletingRef.current = false;
+  const handleBackToHome = async () => {
+    if (!winner && historyIdRef.current && !deletingRef.current) {
+      try {
+        deletingRef.current = true;
+        await deleteHistory(historyIdRef.current);
+      } catch (e) {
+        console.warn("deleteHistory on back failed:", e);
+      } finally {
+        deletingRef.current = false;
+      }
     }
-  }
-  navigate("/home");
-};
+    navigate("/home");
+  };
 
   useEffect(() => {
     const onBeforeUnload = () => {
@@ -292,6 +288,8 @@ const handleBackToHome = async () => {
           onCellClick={onCellClick}
           cellPx={N <= 5 ? 90 : N <= 10 ? 56 : 36}
           gap={N <= 10 ? 6 : 4}
+          winningLine={winLine}     
+          winner={winner || null}   
         />
       </div>
 

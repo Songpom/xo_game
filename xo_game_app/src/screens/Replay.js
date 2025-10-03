@@ -1,18 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getHistory, getMoves } from "../services/historyService";
+import { checkWinner, findWinningLine } from "../component/gamelogic";
+import { defaultKForN } from "../component/rules";
 import BoardInteractive from "../component/Board";
-import "../styles/Game.css"; 
+import "../styles/Game.css";
 
 export default function Replay() {
-  const { id } = useParams();         
+  const { id } = useParams();
   const navigate = useNavigate();
 
-  const [game, setGame] = useState(null); 
-  const [moves, setMoves] = useState([]); 
+  const [game, setGame] = useState(null);
+  const [moves, setMoves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
-
 
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -36,9 +37,10 @@ export default function Replay() {
     })();
   }, [id]);
 
+  const N = game?.sizeBoard ?? 3;
+  const K = defaultKForN(N);
 
   const boardCells = useMemo(() => {
-    const N = game?.sizeBoard ?? 3;
     const cells = Array(N * N).fill("");
     for (let i = 0; i < Math.min(step, moves.length); i++) {
       const mv = moves[i];
@@ -46,7 +48,14 @@ export default function Replay() {
       cells[index] = mv.player;
     }
     return cells;
-  }, [game, moves, step]);
+  }, [game, moves, step, N]);
+  const { winner, winLine } = useMemo(() => {
+    const w = checkWinner(boardCells, N, K);
+    return {
+      winner: w || null,
+      winLine: w ? (findWinningLine(boardCells, N, K) || null) : null,
+    };
+  }, [boardCells, N, K]);
 
   useEffect(() => {
     if (!playing) return;
@@ -59,8 +68,6 @@ export default function Replay() {
     }, 600);
     return () => clearTimeout(timerRef.current);
   }, [playing, step, moves.length]);
-
-  const N = game?.sizeBoard ?? 3;
 
   const goFirst = () => { setPlaying(false); setStep(0); };
   const stepPrev = () => { setPlaying(false); setStep((s) => Math.max(0, s - 1)); };
@@ -104,8 +111,11 @@ export default function Replay() {
               onCellClick={() => {}}
               cellPx={N <= 5 ? 90 : N <= 10 ? 56 : 36}
               gap={N <= 10 ? 6 : 4}
+              winningLine={winLine} 
+              winner={winner}
             />
           </div>
+
           <div style={{ marginTop: 12 }}>
             <details>
               <summary>รายละเอียดลำดับการเดิน</summary>
