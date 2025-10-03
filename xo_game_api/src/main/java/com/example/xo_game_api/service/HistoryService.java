@@ -40,20 +40,17 @@ public class HistoryService {
     }
 
 
-    @Transactional
     public List<HistoryXO> listAll() {
         return historyRepo.findAll(Sort.by(Sort.Direction.DESC, "id"));
     }
 
 
-    @Transactional
     public HistoryXO getOne(Long id) {
         return historyRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("History not found: " + id));
     }
 
 
-    @Transactional
     public List<Move> getMoves(Long historyId) {
         return moveRepo.findByHistoryXOIdOrderByTurnNumberAsc(historyId);
     }
