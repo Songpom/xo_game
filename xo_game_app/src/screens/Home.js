@@ -2,8 +2,8 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { listHistory } from "../services/historyService";
-import { defaultKForN } from "./rules";
-import "../home.css";
+import { defaultKForN } from "../component/rules";
+import "../styles/home.css";
 
 export default function Home() {
   const navigate = useNavigate();

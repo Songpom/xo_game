@@ -1,17 +1,17 @@
 // src/screens/Game.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { checkWinner, makeEmptyBoard } from "./gamelogic";
-import { defaultKForN } from "./rules";
-import { getBestMove } from "./Ai"; // ใช้ตอนเลือก AI
-import BoardInteractive, { cellsToString } from "./Board";
+import { checkWinner, makeEmptyBoard } from "../component/gamelogic";
+import { defaultKForN } from "../component/rules";
+import { getBestMove } from "../component/Ai"; // ใช้ตอนเลือก AI
+import BoardInteractive, { cellsToString } from "../component/Board";
 import {
   startHistory,
   appendMove,
   finishHistory,
   deleteHistory,
 } from "../services/historyService";
-import "../Game.css";
+import "../styles/Game.css";
 
 export default function Game() {
   const navigate = useNavigate();

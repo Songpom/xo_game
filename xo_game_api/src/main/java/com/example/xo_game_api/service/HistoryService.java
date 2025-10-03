@@ -20,7 +20,7 @@ public class HistoryService {
     private final HistoryRepository historyRepo;
     private final MoveRepository moveRepo;
 
-    /** เริ่มเกม: รับ HistoryXO ตรง ๆ (อย่าส่ง id/moves มานะ) */
+
     @Transactional
     public HistoryXO start(HistoryXO body) {
         HistoryXO h = new HistoryXO();
@@ -33,7 +33,7 @@ public class HistoryService {
         return historyRepo.save(h);
     }
 
-    /** เพิ่ม 1 เดิน: รับ Move ตรง ๆ (ต้อง set historyId ผ่าน path, ไม่รับจาก body) */
+
     @Transactional
     public Move appendMove(Long historyId, Move body) {
         HistoryXO h = historyRepo.findById(historyId)
@@ -48,7 +48,7 @@ public class HistoryService {
         return moveRepo.save(m);
     }
 
-    /** จบเกม: อัปเดต winner + finalBoard (รับจาก Map ง่าย ๆ เพื่อหลีกเลี่ยง DTO) */
+
     @Transactional
     public HistoryXO finish(Long historyId, Map<String, Object> body) {
         HistoryXO h = historyRepo.findById(historyId)
@@ -60,38 +60,26 @@ public class HistoryService {
         return historyRepo.save(h);
     }
 
-<<<<<<< HEAD
 
-=======
-    /** รายการทั้งหมด (ล่าสุดก่อน) */
     @Transactional
->>>>>>> parent of fc78412 (Update XOgame)
     public List<HistoryXO> listAll() {
         return historyRepo.findAll(Sort.by(Sort.Direction.DESC, "id"));
     }
 
-<<<<<<< HEAD
 
-=======
-    /** รายการเดียว (รวม moves แบบ LAZY ถ้าจะ serialize ควรเปิด endpoint แยก moves) */
     @Transactional
->>>>>>> parent of fc78412 (Update XOgame)
     public HistoryXO getOne(Long id) {
         return historyRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("History not found: " + id));
     }
 
-<<<<<<< HEAD
 
-=======
-    /** moves ของเกม */
     @Transactional
->>>>>>> parent of fc78412 (Update XOgame)
     public List<Move> getMoves(Long historyId) {
         return moveRepo.findByHistoryXOIdOrderByTurnNumberAsc(historyId);
     }
 
-    /** ลบทั้งเกม + moves */
+
     @Transactional
     public void delete(Long historyId) {
         moveRepo.deleteByHistoryXOId(historyId); // safety

@@ -2,8 +2,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getHistory, getMoves } from "../services/historyService";
-import BoardInteractive from "./Board"; // ใช้เฉพาะแสดงผล (ไม่ต้อง onClick)
-import "../Game.css"; // ใช้สไตล์เดิมได้
+import BoardInteractive from "../component/Board"; // ใช้เฉพาะแสดงผล (ไม่ต้อง onClick)
+import "../styles/Game.css"; // ใช้สไตล์เดิมได้
 
 export default function Replay() {
   const { id } = useParams();               // /replay/:id

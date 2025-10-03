@@ -8,14 +8,14 @@ export function cellsToString(cells, N) {
   return safe.join(","); // เช่น "X,O,,O,X,,,,"
 }
 
-/* ดึงจาก DB: String → Array */
+
 export function stringToCells(str, N) {
   const arr = (str || "").split(",").map((s) => s.trim().toUpperCase());
   while (arr.length < N * N) arr.push("");
   return arr.slice(0, N * N);
 }
 
-/* กระดานคลิกได้ */
+
 export default function BoardInteractive({
   size = 3,
   cells = [],
