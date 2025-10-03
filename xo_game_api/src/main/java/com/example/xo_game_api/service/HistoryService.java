@@ -17,72 +17,51 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class HistoryService {
 
+
     private final HistoryRepository historyRepo;
     private final MoveRepository moveRepo;
 
-    /** เริ่มเกม: รับ HistoryXO ตรง ๆ (อย่าส่ง id/moves มานะ) */
+
     @Transactional
-    public HistoryXO start(HistoryXO body) {
-        HistoryXO h = new HistoryXO();
-        h.setMode(body.getMode());
-        h.setSizeBoard(body.getSizeBoard());
-        h.setFirstPlayer(body.getFirstPlayer());
-        h.setBotType(body.getBotType());
-        h.setWinner(null);
-        h.setFinalBoard(null);
+    public HistoryXO start(HistoryXO h) {
         return historyRepo.save(h);
     }
 
-    /** เพิ่ม 1 เดิน: รับ Move ตรง ๆ (ต้อง set historyId ผ่าน path, ไม่รับจาก body) */
+
     @Transactional
-    public Move appendMove(Long historyId, Move body) {
-        HistoryXO h = historyRepo.findById(historyId)
-                .orElseThrow(() -> new IllegalArgumentException("History not found: " + historyId));
-        Move m = new Move();
-        m.setHistoryXO(h);
-        m.setTurnNumber(body.getTurnNumber());
-        m.setPlayer(body.getPlayer());
-        m.setRowIdx(body.getRowIdx());
-        m.setColIdx(body.getColIdx());
-        m.setBoardAfter(body.getBoardAfter());
+    public Move appendMove(Move m) {
         return moveRepo.save(m);
     }
 
-    /** จบเกม: อัปเดต winner + finalBoard (รับจาก Map ง่าย ๆ เพื่อหลีกเลี่ยง DTO) */
+
     @Transactional
-    public HistoryXO finish(Long historyId, Map<String, Object> body) {
-        HistoryXO h = historyRepo.findById(historyId)
-                .orElseThrow(() -> new IllegalArgumentException("History not found: " + historyId));
-        Object w = body.get("winner");
-        Object fb = body.get("finalBoard");
-        if (w != null)  h.setWinner(String.valueOf(w));
-        if (fb != null) h.setFinalBoard(String.valueOf(fb));
+    public HistoryXO finish(HistoryXO h) {
         return historyRepo.save(h);
     }
 
-    /** รายการทั้งหมด (ล่าสุดก่อน) */
+
     @Transactional
     public List<HistoryXO> listAll() {
         return historyRepo.findAll(Sort.by(Sort.Direction.DESC, "id"));
     }
 
-    /** รายการเดียว (รวม moves แบบ LAZY ถ้าจะ serialize ควรเปิด endpoint แยก moves) */
+
     @Transactional
     public HistoryXO getOne(Long id) {
         return historyRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("History not found: " + id));
     }
 
-    /** moves ของเกม */
+
     @Transactional
     public List<Move> getMoves(Long historyId) {
         return moveRepo.findByHistoryXOIdOrderByTurnNumberAsc(historyId);
     }
 
-    /** ลบทั้งเกม + moves */
+
     @Transactional
     public void delete(Long historyId) {
-        moveRepo.deleteByHistoryXOId(historyId); // safety
+        moveRepo.deleteByHistoryXOId(historyId);
         historyRepo.deleteById(historyId);
     }
 }

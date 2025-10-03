@@ -1,6 +1,7 @@
 package com.example.xo_game_api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.ArrayList;
@@ -45,6 +46,5 @@ public class HistoryXO {
     /** ลำดับการเดินทั้งหมด */
     @OneToMany(mappedBy = "historyXO", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("turnNumber ASC")
-
     private List<Move> moves = new ArrayList<>();
 }

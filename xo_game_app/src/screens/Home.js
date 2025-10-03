@@ -1,24 +1,19 @@
-// src/screens/Home.js
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { listHistory } from "../services/historyService";
-import { defaultKForN } from "./rules";
-import "../home.css";
+import { defaultKForN } from "../component/rules";
+import "../styles/home.css";
 
 export default function Home() {
   const navigate = useNavigate();
-
-  // form state
-  const [mode, setMode] = useState("PVP"); // PVP | PVBOT
-  const [size, setSize] = useState(3);     // 3..19
+  const [mode, setMode] = useState("PVP"); 
+  const [size, setSize] = useState(3); 
   const kToWin = useMemo(() => defaultKForN(size), [size]);
 
-  // history state
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  // load history
   const loadHistory = async () => {
     try {
       setLoading(true);
@@ -33,20 +28,17 @@ export default function Home() {
   };
   useEffect(() => { loadHistory(); }, []);
 
-  // start game
   const startGame = () => {
     const first = Math.random() < 0.5 ? "X" : "O";
     navigate("/play", { state: { mode, size, k: kToWin, first } });
   };
 
-  // small helpers
   const onSizeChange = (e) => {
     const n = Number(e.target.value || 3);
     const clamped = Math.max(3, Math.min(19, n));
     setSize(clamped);
   };
 
-  // tiny components
   const MiniBoard = ({ board, sizeBoard }) => {
     const N = Math.max(3, Number(sizeBoard) || 3);
     const cells = (board || "").split(",").map((s) => s.trim().toUpperCase());
@@ -84,7 +76,6 @@ export default function Home() {
 
   return (
     <div className="page light">
-      {/* Header */}
       <header className="app-header">
         <div className="brand">
           <h1 className="brand-title">XO Game</h1>
@@ -96,10 +87,8 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Config Section */}
       <section className="section">
         <div className="config-grid">
-          {/* Mode Card */}
           <div className="card">
             <div className="card-head">
               <h3>โหมดการเล่น</h3>
@@ -133,8 +122,6 @@ export default function Home() {
               </label>
             </div>
           </div>
-
-          {/* Size + Preview Card */}
           <div className="card">
             <div className="card-head">
               <h3>ขนาดกระดาน</h3>
@@ -198,7 +185,7 @@ export default function Home() {
                 <tbody>
                   {items.map((h) => (
                     <tr key={h.id}>
-                      <td>#{h.id}</td>
+                      <td>{h.id}</td>
                       <td>
                         <span className={`badge ${h.winner === "X" ? "badge-x" : h.winner === "O" ? "badge-o" : ""}`}>
                           {h.winner || "-"}

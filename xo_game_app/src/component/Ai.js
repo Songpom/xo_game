@@ -1,5 +1,3 @@
-// src/screens/Ai.js
-// ใช้ร่วมกับ checkWinner/idx จาก gamelogic.js
 import { checkWinner, idx } from "./gamelogic";
 
 const DIRECTIONS = [
@@ -11,7 +9,6 @@ const DIRECTIONS = [
 
 const inBounds = (r, c, N) => r >= 0 && r < N && c >= 0 && c < N;
 
-// 1) ทดลองวางแล้วชนะเลยไหม
 function findImmediateWin(boardCells, boardSize, winCondition, playerSymbol) {
   for (let i = 0; i < boardCells.length; i++) {
     if (boardCells[i]) continue;
@@ -23,7 +20,6 @@ function findImmediateWin(boardCells, boardSize, winCondition, playerSymbol) {
   return null;
 }
 
-// 2) นับความต่อเนื่องในทิศทางหนึ่ง
 function countLine(boardCells, boardSize, row, col, dr, dc, symbol) {
   let countSame = 0;
   let r = row + dr, c = col + dc;
@@ -34,11 +30,9 @@ function countLine(boardCells, boardSize, row, col, dr, dc, symbol) {
   return { countSame, openEnd };
 }
 
-// 3) ประเมินคะแนนตำแหน่งเดียว
 function evaluatePosition(boardCells, boardSize, winCondition, row, col, symbol) {
   const temp = [...boardCells];
   temp[idx(row, col, boardSize)] = symbol;
-
   let score = 0;
   for (const { dr, dc } of DIRECTIONS) {
     const fwd = countLine(temp, boardSize, row, col, dr, dc, symbol);
@@ -47,14 +41,11 @@ function evaluatePosition(boardCells, boardSize, winCondition, row, col, symbol)
     const openEnds = fwd.openEnd + bwd.openEnd;
 
     if (runLen >= winCondition) score += 10_000;
-    else if (runLen === winCondition - 1 && openEnds >= 1) score += 3_000;
-    else if (runLen === winCondition - 2 && openEnds === 2) score += 800;
-    else if (runLen === winCondition - 2 && openEnds === 1) score += 300;
-    else if (runLen === winCondition - 3 && openEnds === 2) score += 120;
-      else score += runLen * 10 + openEnds * 5;
+    else if (runLen === winCondition - 1 && openEnds >= 1) score += 5000;
+    else if (runLen === winCondition - 2 && openEnds === 2) score += 1000;
+      else score += runLen * 50 + openEnds * 10;
   }
 
-  // โบนัสใกล้กลางกระดาน
   const center = (boardSize - 1) / 2;
   const distCenter = Math.abs(row - center) + Math.abs(col - center);
   score += Math.max(0, 10 - distCenter);
@@ -62,17 +53,13 @@ function evaluatePosition(boardCells, boardSize, winCondition, row, col, symbol)
   return score;
 }
 
-// 4) เลือกช่องที่ดีที่สุด
 export function getBestMove(boardCells, boardSize, winCondition, botSymbol = "O", humanSymbol = "X") {
-  // ชนะทันที
   const winNow = findImmediateWin(boardCells, boardSize, winCondition, botSymbol);
   if (winNow !== null) return winNow;
 
-  // บล็อกคู่แข่ง
   const blockNow = findImmediateWin(boardCells, boardSize, winCondition, humanSymbol);
   if (blockNow !== null) return blockNow;
 
-  // สำหรับกระดานเล็ก ชอบ center > corner
   if (boardSize <= 4) {
     const centerIndex = boardSize % 2 === 1 ? idx((boardSize - 1) / 2, (boardSize - 1) / 2, boardSize) : null;
     if (centerIndex !== null && !boardCells[centerIndex]) return centerIndex;
@@ -85,7 +72,6 @@ export function getBestMove(boardCells, boardSize, winCondition, botSymbol = "O"
     if (corners.length) return corners[Math.floor(Math.random() * corners.length)];
   }
 
-  // ประเมินทุกช่องว่าง (รุก+รับ)
   let bestIndex = null;
   let bestScore = -Infinity;
   for (let i = 0; i < boardCells.length; i++) {

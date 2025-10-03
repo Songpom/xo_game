@@ -1,6 +1,7 @@
 // src/main/java/com/example/xo_game_api/model/Move.java
 package com.example.xo_game_api.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
