@@ -1,11 +1,9 @@
-// src/screens/Board.js
 import React from "react";
 
-/* บันทึกลง DB: Array → String */
 export function cellsToString(cells, N) {
   const safe = Array.isArray(cells) ? cells.slice(0, N * N) : [];
   while (safe.length < N * N) safe.push("");
-  return safe.join(","); // เช่น "X,O,,O,X,,,,"
+  return safe.join(","); 
 }
 
 

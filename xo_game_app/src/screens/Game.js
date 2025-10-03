@@ -1,9 +1,8 @@
-// src/screens/Game.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { checkWinner, makeEmptyBoard } from "../component/gamelogic";
 import { defaultKForN } from "../component/rules";
-import { getBestMove } from "../component/Ai"; // ใช้ตอนเลือก AI
+import { getBestMove } from "../component/Ai"; 
 import BoardInteractive, { cellsToString } from "../component/Board";
 import {
   startHistory,
@@ -16,64 +15,52 @@ import "../styles/Game.css";
 export default function Game() {
   const navigate = useNavigate();
   const { state } = useLocation() || {};
-
-  // ค่าที่ส่งมาจาก Home
   const mode  = state?.mode  ?? "PVP";
   const N     = state?.size  ?? 3;
   const K     = state?.k     ?? defaultKForN(N);
   const first = state?.first ?? "X";
 
-  // สถานะบอท (เลือกได้เฉพาะโหมด PVBOT)
-  const [botType, setBotType] = useState(mode === "PVBOT" ? "RANDOM" : null); // "RANDOM" | "AI" | null
+  const [botType, setBotType] = useState(mode === "PVBOT" ? "RANDOM" : null); 
 
-  // ถ้าเข้าหน้านี้โดยไม่ผ่าน Home → เด้งกลับ
   useEffect(() => { if (!state) navigate("/home"); }, [state, navigate]);
 
-  // สถานะกระดาน
   const [cells, setCells]   = useState(() => makeEmptyBoard(N));
-  const [turn, setTurn]     = useState(first);              // "X" | "O"
-  const [winner, setWinner] = useState(null);               // "X" | "O" | "DRAW" | null
-  const [saved, setSaved]   = useState(false);              // แสดงผลว่าบันทึกแล้ว
+  const [turn, setTurn]     = useState(first);     
+  const [winner, setWinner] = useState(null);           
+  const [saved, setSaved]   = useState(false);             
 
   const isPvBot = mode === "PVBOT";
 
-  // refs จัดการวงจรชีวิตเกมฝั่ง backend
-  const historyIdRef   = useRef(null);   // id เกมใน DB
-  const startedRef     = useRef(false);  // เริ่มเกมใน DB แล้วหรือยัง
-  const turnCounterRef = useRef(0);      // จำนวน move ที่บันทึกไปแล้ว
-  const finishedRef    = useRef(false);  // กัน finish ซ้ำซ้อน
-  const deletingRef    = useRef(false);  // กันลบซ้ำ
 
-  // เริ่มเกมใน DB (ครั้งแรกเมื่อมีการเดินจริง)
+  const historyIdRef   = useRef(null); 
+  const startedRef     = useRef(false); 
+  const turnCounterRef = useRef(0);     
+  const finishedRef    = useRef(false);  
+  const deletingRef    = useRef(false);  
+
+
   async function ensureHistoryStarted() {
     if (startedRef.current) return;
     const created = await startHistory({
       mode,
       sizeBoard: N,
       firstPlayer: first,
-      botType, // ส่งชนิดบอทตอนเริ่ม (ถ้าเปลี่ยนกลางเกม ฝั่ง DB จะเก็บค่าแรกไว้)
+      botType,
     });
     historyIdRef.current = created.id;
     startedRef.current = true;
   }
 
-  // เมื่อผู้เล่นคลิกช่อง
   const onCellClick = async (index) => {
     if (winner || cells[index]) return;
-    if (isPvBot && turn === "O") return; // ถึงตาบอท
-
+    if (isPvBot && turn === "O") return;
     const nextBoard = [...cells];
     nextBoard[index] = turn;
-
-    // 1) อัปเดต UI
     setCells(nextBoard);
     setTurn(turn === "X" ? "O" : "X");
 
     try {
-      // 2) เริ่มเกมใน DB ถ้ายังไม่เริ่ม
       await ensureHistoryStarted();
-
-      // 3) บันทึก move
       turnCounterRef.current += 1;
       const boardAfter = cellsToString(nextBoard, N);
 
@@ -84,8 +71,6 @@ export default function Game() {
         colIdx: index % N,
         boardAfter,
       });
-
-      // 4) ตรวจผู้ชนะ แล้ว finish ทันที
       const maybeWinner = checkWinner(nextBoard, N, K);
       if (maybeWinner && !finishedRef.current) {
         finishedRef.current = true;
@@ -101,11 +86,8 @@ export default function Game() {
     }
   };
 
-  // =============================
-  // บอทสุ่ม (Random) — ทำงานเมื่อ botType === "RANDOM"
-  // =============================
   useEffect(() => {
-    if (botType !== "RANDOM") return;         // ✅ ทำงานเฉพาะโหมด Random
+    if (botType !== "RANDOM") return;   
     if (!isPvBot || winner || turn !== "O") return;
 
     const empties = cells.map((v, i) => (v ? null : i)).filter((x) => x !== null);
@@ -116,16 +98,11 @@ export default function Game() {
       const nextBoard = [...cells];
       if (nextBoard[pick]) return;
       nextBoard[pick] = "O";
-
-      // 1) อัปเดต UI
       setCells(nextBoard);
       setTurn("X");
 
       try {
-        // 2) เริ่มเกมถ้ายังไม่เริ่ม
         await ensureHistoryStarted();
-
-        // 3) บันทึก move ของบอท
         turnCounterRef.current += 1;
         const boardAfter = cellsToString(nextBoard, N);
 
@@ -136,8 +113,6 @@ export default function Game() {
           colIdx: pick % N,
           boardAfter,
         });
-
-        // 4) ตรวจผู้ชนะ & finish
         const maybeWinner = checkWinner(nextBoard, N, K);
         if (maybeWinner && !finishedRef.current) {
           finishedRef.current = true;
@@ -156,11 +131,8 @@ export default function Game() {
     return () => clearTimeout(t);
   }, [botType, isPvBot, winner, turn, cells, N, K]);
 
-  // =============================
-  // บอท AI (Heuristic) — ทำงานเมื่อ botType === "AI"
-  // =============================
   useEffect(() => {
-    if (botType !== "AI") return;             // ✅ ทำงานเฉพาะโหมด AI
+    if (botType !== "AI") return;    
     if (mode !== "PVBOT" || winner || turn !== "O") return;
 
     const moveIndex = getBestMove(cells, N, K, "O", "X");
@@ -202,26 +174,41 @@ export default function Game() {
     return () => clearTimeout(t);
   }, [botType, mode, winner, turn, cells, N, K]);
 
-  // รีเซ็ตกระดาน (เฉพาะ UI)
-  const reset = () => {
-    setCells(makeEmptyBoard(N));
-    setTurn(Math.random() < 0.5 ? "X" : "O");
-    setWinner(null);
-    setSaved(false);
-    finishedRef.current = false;
-    turnCounterRef.current = 0;
-  };
-
-  // ===== ลบเกมอัตโนมัติถ้า "เล่นไม่จบ" =====
-  const handleBackToHome = async () => {
-    if (startedRef.current && !finishedRef.current && historyIdRef.current && !deletingRef.current) {
-      try {
-        deletingRef.current = true;
-        await deleteHistory(historyIdRef.current);
-      } catch {}
+const reset = async () => {
+  if (historyIdRef.current && !deletingRef.current) {
+    try {
+      deletingRef.current = true;
+      await deleteHistory(historyIdRef.current);
+    } catch (e) {
+      console.warn("deleteHistory on reset failed:", e);
+    } finally {
+      deletingRef.current = false;
     }
-    navigate("/home");
-  };
+  }
+  historyIdRef.current = null;
+  startedRef.current = false;
+  finishedRef.current = false;
+  turnCounterRef.current = 0;
+  setCells(makeEmptyBoard(N));
+  setTurn(Math.random() < 0.5 ? "X" : "O");
+  setWinner(null);
+  setSaved(false);
+};
+
+
+const handleBackToHome = async () => {
+  if (!winner && historyIdRef.current && !deletingRef.current) {
+    try {
+      deletingRef.current = true;
+      await deleteHistory(historyIdRef.current);
+    } catch (e) {
+      console.warn("deleteHistory on back failed:", e);
+    } finally {
+      deletingRef.current = false;
+    }
+  }
+  navigate("/home");
+};
 
   useEffect(() => {
     const onBeforeUnload = () => {
@@ -269,7 +256,6 @@ export default function Game() {
           )}
         </div>
 
-        {/* ปุ่มสลับบอท (แสดงเฉพาะ PVBOT) */}
         {isPvBot && (
           <div style={{ display: "flex", gap: 8 }}>
             <button

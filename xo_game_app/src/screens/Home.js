@@ -1,4 +1,3 @@
-// src/screens/Home.js
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { listHistory } from "../services/historyService";
@@ -8,17 +7,17 @@ import "../styles/home.css";
 export default function Home() {
   const navigate = useNavigate();
 
-  // form state
-  const [mode, setMode] = useState("PVP"); // PVP | PVBOT
-  const [size, setSize] = useState(3);     // 3..19
+  const [mode, setMode] = useState("PVP"); 
+  const [size, setSize] = useState(3);         
+  const [sizeInput, setSizeInput] = useState("3"); 
   const kToWin = useMemo(() => defaultKForN(size), [size]);
 
-  // history state
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  // load history
+
   const loadHistory = async () => {
     try {
       setLoading(true);
@@ -33,20 +32,32 @@ export default function Home() {
   };
   useEffect(() => { loadHistory(); }, []);
 
-  // start game
-  const startGame = () => {
-    const first = Math.random() < 0.5 ? "X" : "O";
-    navigate("/play", { state: { mode, size, k: kToWin, first } });
-  };
-
-  // small helpers
   const onSizeChange = (e) => {
-    const n = Number(e.target.value || 3);
-    const clamped = Math.max(3, Math.min(19, n));
-    setSize(clamped);
+    const v = e.target.value;
+    if (v === "" || /^\d{0,2}$/.test(v)) {
+      setSizeInput(v);
+    }
   };
 
-  // tiny components
+  const onSizeBlur = () => {
+    let n = parseInt(sizeInput, 10);
+    if (isNaN(n)) n = 3;
+    n = Math.max(3, Math.min(19, n));
+    setSize(n);
+    setSizeInput(String(n));
+  };
+  const startGame = () => {
+    let n = parseInt(sizeInput, 10);
+    if (isNaN(n)) n = 3;
+    n = Math.max(3, Math.min(19, n));
+    if (n !== size) {
+      setSize(n);
+      setSizeInput(String(n));
+    }
+    const first = Math.random() < 0.5 ? "X" : "O";
+    navigate("/play", { state: { mode, size: n, k: defaultKForN(n), first } });
+  };
+
   const MiniBoard = ({ board, sizeBoard }) => {
     const N = Math.max(3, Number(sizeBoard) || 3);
     const cells = (board || "").split(",").map((s) => s.trim().toUpperCase());
@@ -84,7 +95,6 @@ export default function Home() {
 
   return (
     <div className="page light">
-      {/* Header */}
       <header className="app-header">
         <div className="brand">
           <h1 className="brand-title">XO Game</h1>
@@ -96,10 +106,8 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Config Section */}
       <section className="section">
         <div className="config-grid">
-          {/* Mode Card */}
           <div className="card">
             <div className="card-head">
               <h3>โหมดการเล่น</h3>
@@ -133,8 +141,6 @@ export default function Home() {
               </label>
             </div>
           </div>
-
-          {/* Size + Preview Card */}
           <div className="card">
             <div className="card-head">
               <h3>ขนาดกระดาน</h3>
@@ -147,11 +153,12 @@ export default function Home() {
                 <input
                   id="boardSize"
                   className="input"
-                  type="number"
-                  min={3}
-                  max={19}
-                  value={size}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d*"
+                  value={sizeInput}
                   onChange={onSizeChange}
+                  onBlur={onSizeBlur}
                 />
                 <div className="hint">กติกาอัตโนมัติ: {size}×{size} ⇒ ชนะเมื่อเรียง {kToWin}</div>
               </div>
@@ -168,8 +175,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* History Section */}
       <section className="section">
         <div className="card">
           <div className="table-head">
