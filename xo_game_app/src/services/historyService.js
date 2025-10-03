@@ -22,7 +22,7 @@ export async function finishHistory(historyId, { winner, finalBoard }) {
   return res.data;
 }
 
-
+/* 👇 เพิ่มสองตัวนี้ */
 export async function getHistory(id) {
   const res = await client.get(`/history/${id}`);
   return res.data;

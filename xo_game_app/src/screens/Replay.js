@@ -1,24 +1,25 @@
+// src/screens/Replay.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getHistory, getMoves } from "../services/historyService";
-import BoardInteractive from "../component/Board"; 
-import "../styles/Game.css"; 
+import BoardInteractive from "./Board"; // ใช้เฉพาะแสดงผล (ไม่ต้อง onClick)
+import "../Game.css"; // ใช้สไตล์เดิมได้
 
 export default function Replay() {
-  const { id } = useParams();              
+  const { id } = useParams();               // /replay/:id
   const navigate = useNavigate();
 
-  const [game, setGame] = useState(null);   
-  const [moves, setMoves] = useState([]);   
+  const [game, setGame] = useState(null);   // HistoryXO
+  const [moves, setMoves] = useState([]);   // Move[]
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-
-  const [step, setStep] = useState(0);      
+  // replay state
+  const [step, setStep] = useState(0);      // 0 = ยังไม่เดิน, 1 = เดินตาแรกแล้ว ...
   const [playing, setPlaying] = useState(false);
   const timerRef = useRef(null);
 
-
+  // โหลดข้อมูลเกม + ลำดับการเดิน
   useEffect(() => {
     (async () => {
       try {
@@ -37,27 +38,30 @@ export default function Replay() {
     })();
   }, [id]);
 
-
+  // คำนวณบอร์ด ณ step ปัจจุบัน
   const boardCells = useMemo(() => {
     const N = game?.sizeBoard ?? 3;
+    // ถ้ามี boardAfter ใน move จะใช้ก็ได้ แต่เพื่อความชัวร์คำนวณใหม่จากต้น:
     const cells = Array(N * N).fill("");
     for (let i = 0; i < Math.min(step, moves.length); i++) {
       const mv = moves[i];
       const index = mv.rowIdx * N + mv.colIdx;
-      cells[index] = mv.player; 
+      cells[index] = mv.player; // "X" หรือ "O"
     }
     return cells;
   }, [game, moves, step]);
 
+  // ควบคุมเล่นอัตโนมัติ
   useEffect(() => {
     if (!playing) return;
+    // ถึงสุดแล้วหยุด
     if (step >= moves.length) {
       setPlaying(false);
       return;
     }
     timerRef.current = setTimeout(() => {
       setStep((s) => Math.min(s + 1, moves.length));
-    }, 600);
+    }, 600); // ความเร็ว replay
     return () => clearTimeout(timerRef.current);
   }, [playing, step, moves.length]);
 
@@ -75,7 +79,7 @@ export default function Replay() {
         <button className="btn btn-ghost" onClick={() => navigate("/home")}>← กลับ Home</button>
         {game && (
           <div className="game-meta">
-            เกม {game.id} · โหมด: <b>{game.mode}</b> · ขนาด: <b>{N}×{N}</b> · ผู้เริ่ม: <b>{game.firstPlayer}</b>
+            เกม #{game.id} · โหมด: <b>{game.mode}</b> · ขนาด: <b>{N}×{N}</b> · ผู้เริ่ม: <b>{game.firstPlayer}</b>
             {game.winner ? <> · ผู้ชนะ: <b>{game.winner}</b></> : null}
           </div>
         )}
@@ -107,13 +111,15 @@ export default function Replay() {
               gap={N <= 10 ? 6 : 4}
             />
           </div>
+
+          {/* แสดง log ของแต่ละตา (option) */}
           <div style={{ marginTop: 12 }}>
             <details>
               <summary>รายละเอียดลำดับการเดิน</summary>
               <ol>
                 {moves.map((m, i) => (
                   <li key={m.id || i}>
-                    {m.player} → ({m.rowIdx},{m.colIdx})
+                    #{m.turnNumber}: {m.player} → ({m.rowIdx},{m.colIdx})
                   </li>
                 ))}
               </ol>
