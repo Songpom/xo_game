@@ -93,11 +93,11 @@
 1.  รับค่าจากหน้า game เรียก `getBestMove` ส่ง `boardCells boardSize winCondition botSymbolฝั่งบอท  humanSymbolฝั่งคน`
 2. **หาวิธีชนะ**  
    - เรียก `findImmediateWin(board, N, K, botSymbol)`
-       - ทดลองวางบอทในทุกช่องว่าง แล้วเรียก checkWinner
+       - ทดลองวางบอทในทุกช่องว่าง แล้วเรียก `checkWinner`  
 		   - ตรวจcheckwinnerถ้าวางแล้วชนะ รีเทิร์น ตัวนั้น นั้น
 3. **บล็อกคู่แข่ง**  
    - เรียก `findImmediateWin(board, N, K, humanSymbol)`  
-       - ทดลองวางบอทในทุกช่องว่าง แล้วเรียก checkWinner
+       - ทดลองวางบอทในทุกช่องว่าง แล้วเรียก `checkWinner`
 		   - ตรวจcheckwinnerถ้าวางแล้วชนะ รีเทิร์น ตัวนั้น นั้น
 4. **กรณีบอร์ดเล็ก**  
    - เลือก **กลาง** ถ้าว่าง  
