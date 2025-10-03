@@ -7,16 +7,21 @@ import "../styles/home.css";
 export default function Home() {
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState("PVP"); 
-  const [size, setSize] = useState(3);         
-  const [sizeInput, setSizeInput] = useState("3"); 
-  const kToWin = useMemo(() => defaultKForN(size), [size]);
+  const [mode, setMode] = useState("PVP");
+  const [sizeInput, setSizeInput] = useState("3");
 
+  // คำนวณ N แบบ real-time จาก input (และ clamp 3–19)
+  const previewN = useMemo(() => {
+    const n = parseInt(sizeInput, 10);
+    if (isNaN(n)) return 3;
+    return Math.max(3, Math.min(19, n));
+  }, [sizeInput]);
+
+  const kToWin = useMemo(() => defaultKForN(previewN), [previewN]);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
-
 
   const loadHistory = async () => {
     try {
@@ -32,6 +37,7 @@ export default function Home() {
   };
   useEffect(() => { loadHistory(); }, []);
 
+  // พิมพ์ได้สูงสุด 2 หลัก และให้ preview อัปเดตทันที
   const onSizeChange = (e) => {
     const v = e.target.value;
     if (v === "" || /^\d{0,2}$/.test(v)) {
@@ -39,21 +45,21 @@ export default function Home() {
     }
   };
 
+  // ถ้า blur ว่างอยู่ ให้เด้งกลับมาเป็นค่าที่ clamp แล้ว
   const onSizeBlur = () => {
-    let n = parseInt(sizeInput, 10);
-    if (isNaN(n)) n = 3;
-    n = Math.max(3, Math.min(19, n));
-    setSize(n);
+    const n = previewN; // clamp แล้วแน่ๆ
     setSizeInput(String(n));
   };
-  const startGame = () => {
-    let n = parseInt(sizeInput, 10);
-    if (isNaN(n)) n = 3;
+
+  // ปุ่ม − / +
+  const stepSize = (delta) => {
+    let n = previewN + delta;
     n = Math.max(3, Math.min(19, n));
-    if (n !== size) {
-      setSize(n);
-      setSizeInput(String(n));
-    }
+    setSizeInput(String(n));
+  };
+
+  const startGame = () => {
+    const n = previewN; // ใช้ค่าล่าสุดทันที
     const first = Math.random() < 0.5 ? "X" : "O";
     navigate("/play", { state: { mode, size: n, k: defaultKForN(n), first } });
   };
@@ -141,6 +147,7 @@ export default function Home() {
               </label>
             </div>
           </div>
+
           <div className="card">
             <div className="card-head">
               <h3>ขนาดกระดาน</h3>
@@ -150,22 +157,47 @@ export default function Home() {
             <div className="field-row">
               <div className="field">
                 <label htmlFor="boardSize">N × N</label>
-                <input
-                  id="boardSize"
-                  className="input"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="\d*"
-                  value={sizeInput}
-                  onChange={onSizeChange}
-                  onBlur={onSizeBlur}
-                />
-                <div className="hint">กติกาอัตโนมัติ: {size}×{size} ⇒ ชนะเมื่อเรียง {kToWin}</div>
+
+                <div className="input-stepper">
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => stepSize(-1)}
+                    disabled={previewN <= 3}
+                    aria-label="ลดขนาดกระดาน"
+                  >
+                    −
+                  </button>
+
+                  <input
+                    id="boardSize"
+                    className="input"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="\d*"
+                    value={sizeInput}
+                    onChange={onSizeChange}
+                    onBlur={onSizeBlur}
+                    aria-label="กำหนดขนาดกระดาน"
+                  />
+
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => stepSize(1)}
+                    disabled={previewN >= 19}
+                    aria-label="เพิ่มขนาดกระดาน"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <div className="hint">กติกาอัตโนมัติ: {previewN}×{previewN} ⇒ ชนะเมื่อเรียง {kToWin}</div>
               </div>
 
               <div className="preview-wrap">
-                <PreviewBoard N={size} />
-                <div className="preview-caption">ตัวอย่างกระดาน {size}×{size}</div>
+                <PreviewBoard N={previewN} />
+                <div className="preview-caption">ตัวอย่างกระดาน {previewN}×{previewN}</div>
               </div>
             </div>
 
@@ -175,6 +207,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+
       <section className="section">
         <div className="card">
           <div className="table-head">

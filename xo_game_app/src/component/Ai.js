@@ -50,7 +50,6 @@ function evaluatePosition(boardCells, boardSize, winCondition, row, col, symbol)
     else score += runLen * 50 + openEnds * 10;
   }
 
-
   const center = (boardSize - 1) / 2;
   const distCenter = Math.abs(row - center) + Math.abs(col - center);
   score += Math.max(0, 10 - distCenter);
