@@ -1,7 +1,8 @@
 # xo_game
 
-## วิธีการออกแบบโปรแกรม
+[![ดูคลิปสาธิตโปรเจกต์](https://img.youtube.com/vi/m6LcDImQC7U/hqdefault.jpg)](https://youtu.be/m6LcDImQC7U)
 
+## วิธีการออกแบบโปรแกรม
 1) ออกแบบโมเดลฐานข้อมูล **MySQL**  
 มี 2 ตารางหลัก
 
