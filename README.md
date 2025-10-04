@@ -1,6 +1,16 @@
 # xo_game
 
-[![ดูคลิปสาธิตโปรเจกต์](https://img.youtube.com/vi/m6LcDImQC7U/hqdefault.jpg)](https://youtu.be/m6LcDImQC7U)
+<p align="center">
+  <a href="https://youtu.be/m6LcDImQC7U" target="_blank">
+    <img src="https://img.youtube.com/vi/m6LcDImQC7U/hqdefault.jpg" alt="xo_game demo" width="300">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://youtu.be/m6LcDImQC7U" target="_blank">
+    <img alt="Watch on YouTube" src="https://img.shields.io/badge/Watch%20on-YouTube-red?logo=youtube&logoColor=white">
+  </a>
+</p>
 
 ## วิธีการออกแบบโปรแกรม
 1) ออกแบบโมเดลฐานข้อมูล **MySQL**  
