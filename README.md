@@ -28,7 +28,7 @@
 - **Spring Web** : ใช้ HTTP/REST ติดต่อกันระหว่าง Frontend กับ Backend  
 - **Spring Data JPA** : จัดการข้อมูลกับ DB ได้สะดวก ลดการเขียน SQL ยาว  
 - **MySQL Driver** : ใช้ฐานข้อมูล MySQL  
-- **Lombok** : ลด boilerplate code (Getter/Setter/Constructor)
+- **Lombok** : ลด code (Getter/Setter/Constructor)
 
 3) สร้างโปรเจ็กต์ **React**
 - ใช้ **React Router** จัดการเส้นทางของแต่ละหน้า (Home, Game, Replay)
