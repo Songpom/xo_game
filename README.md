@@ -14,8 +14,8 @@
 | sizeBoard       | INT            | NN               | ขนาดกระดาน          | 3              |
 | firstPlayer     | VARCHAR(1)     | NN               | ผู้เล่นที่เริ่มก่อน  | X              |
 | winner          | VARCHAR(10)    |                  | ผู้ชนะ (`X`, `O`, `DRAW`) | O |
-| botType         | VARCHAR(10)    | NULLABLE         | ประเภทบอท            | RANDOM             |
-| finalBoard      | TEXT           | NN               | สภาพกระดานสุดท้าย   | O,X,X,O,O,X... |
+| botType         | VARCHAR(10)    |         | ประเภทบอท            | RANDOM             |
+| finalBoard      | TEXT           |              | สภาพกระดานสุดท้าย   | O,X,X,O,O,X... |
 
 ---
 
@@ -29,7 +29,7 @@
 | player          | VARCHAR(1)     | NN               | ผู้เล่นที่ลง         | X              |
 | rowIdx          | INT            | NN               | แถวที่ลง             | 2              |
 | colIdx          | INT            | NN               | คอลัมน์ที่ลง        | 1              |
-| boardAfter      | TEXT           | NN               | กระดานหลังจากตานี้   | O,X,X,O,O,...  |
+| boardAfter      | TEXT           |                | กระดานตานี้   | O,X,,O,,...  |
 
 
 2) สร้างโปรเจ็กต์ **Spring Boot**  
